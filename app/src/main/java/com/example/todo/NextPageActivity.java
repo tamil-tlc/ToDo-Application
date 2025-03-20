@@ -16,8 +16,7 @@ public class NextPageActivity extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(NextPageActivity.this, MainActivity.class);
-                startActivity(intent);
+               onBackPressed();
             }
         });
     }
