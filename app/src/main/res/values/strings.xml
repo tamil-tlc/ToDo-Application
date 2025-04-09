@@ -2,4 +2,9 @@
     <string name="app_name">ToDo</string>
     <string name="item_list">Item List</string>
     <string name="enter_item">enter item</string>
+    <string name="navigation_drawer_open">open</string>
+    <string name="navigation_drawer_close">close</string>
+    <string name="enter_your_items">enter your items</string>
+    <string name="add">add</string>
+    <string name="todo_list">TODO LIST</string>
 </resources>

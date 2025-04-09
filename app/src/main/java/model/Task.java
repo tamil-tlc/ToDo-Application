@@ -14,7 +14,7 @@ public class Task {
         return taskText;
     }
 
-    public void setTaskText(String taskText) {
+    public void setTaskText(final String taskText) {
         this.taskText = taskText;
     }
 
@@ -22,7 +22,7 @@ public class Task {
         return isChecked;
     }
 
-    public void setChecked(boolean checked) {
+    public void setChecked(final boolean checked) {
         isChecked = checked;
     }
 }

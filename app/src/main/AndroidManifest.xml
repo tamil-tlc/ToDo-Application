@@ -13,7 +13,7 @@
         android:theme="@style/Theme.ToDo"
         tools:targetApi="31">
         <activity
-            android:name="service.AddActivity"
+            android:name="view.AddActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
