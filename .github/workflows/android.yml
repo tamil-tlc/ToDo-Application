@@ -124,7 +124,7 @@ jobs:
     - name: Bump Version Code and Name
       id: bump_version
       run: |
-          VERSION_NAME=$(git describe --tags --abbrev=0 || echo "0.0.0")
+          VERSION_NAME=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
           VERSION_CODE=$((10000 + $(git rev-list --count HEAD)))
 
           # Assuming versionName and versionCode are in app/build.gradle
