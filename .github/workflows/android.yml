@@ -105,4 +105,70 @@ jobs:
      with:
       name: debug-apk
       path: app/build/outputs/apk/debug/*.apk
-    
+
+
+ version-and-release:
+   needs: build
+   runs-on: ubuntu-latest
+
+   steps:
+    - name: checkout the code 
+      uses: actions/checkout@v4
+
+    - name: set up java jdk 17
+      uses: actions/setup-java@v4
+      with:
+       java-version: 17
+       distribution: 'temurin'
+
+    - name: bump version code and name
+      id: bump_version
+      run: |
+        VERSION_NAME: $(git describe --tags --abbrev=0 || echo "0.0.0")
+        VERSION_CODE: $((10000 + $(git rev-list --count HEAD)))
+
+        set i "s/versionCode . */versionCode $VERSION_CODE/" app/build.gradle
+        set i "s/versionName \".*\"/versionName \"$VERSION_NAME\"/" app/build.gradle
+
+        echo "version=$VERSION_NAME" >> $GITHUB_OUTPUT
+        echo "build=$VERSION_CODE" >> $GITHUB_OUTPUT
+
+
+    - name: commit and push version bump
+      run: |
+       git config user.name "github.actions"
+       git config user.email "github@actions.com
+       git add app/build.gradle
+       git commit -m "version bump ${{steps.bump_version.outputs.version}} (build ${{steps.bump_version.outputs.build}}) [skip ci] || echo " no changes to commit"
+       git push
+
+
+    - name: Generate branch-based release notes
+      id: notes
+      run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          VERSION=${{ steps.bump_version.outputs.version }}
+          PROJECT="${{ env.PROJECT_NAME }}"
+          if [[ "$BRANCH_NAME" == "dev" ]]; then
+            NOTES="Release for DEV branch\n\nProject: $PROJECT\nVersion: $VERSION\n\nCommits:\n"
+            NOTES+=$(git log --pretty=format:"- %h %s (%an)" -10)
+          elif [[ "$BRANCH_NAME" == "qa" ]]; then
+            NOTES="QA Release\n\nProject: $PROJECT\nVersion: $VERSION"
+          else
+            NOTES="Production release version $VERSION"
+          fi
+          echo "$NOTES"
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+          echo "$NOTES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV     
+     
+ 
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+          tag_name: ${{ steps.bump_version.outputs.version }}
+          name: Release ${{ steps.bump_version.outputs.version }}
+          body: ${{ steps.release_notes.outputs.body }}
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
