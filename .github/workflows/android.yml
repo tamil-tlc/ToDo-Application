@@ -127,9 +127,9 @@ jobs:
           VERSION_NAME=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
           VERSION_CODE=$((10000 + $(git rev-list --count HEAD)))
 
-          # Assuming versionName and versionCode are in app/build.gradle
-          sed -i "s/versionCode .*/versionCode $VERSION_CODE/" app/build.gradle
-          sed -i "s/versionName \".*\"/versionName \"$VERSION_NAME\"/" app/build.gradle
+          # Assuming versionName and versionCode are in app/build.gradle.kts
+          sed -i "s/versionCode .*/versionCode $VERSION_CODE/" app/build.gradle.kts
+          sed -i "s/versionName \".*\"/versionName \"$VERSION_NAME\"/" app/build.gradle.kts
 
           echo "version=$VERSION_NAME" >> $GITHUB_OUTPUT
           echo "build=$VERSION_CODE" >> $GITHUB_OUTPUT
@@ -141,7 +141,7 @@ jobs:
       run: |
         git config user.name "github-actions"
         git config user.email "actions@github.com"
-        git add app/build.gradle
+        git add app/build.gradle.kts
         git commit -m "Bump version to ${{ steps.bump_version.outputs.version }} (build ${{ steps.bump_version.outputs.build }}) [skip ci]" || echo "No changes to commit"
 
          # Use PAT for push
