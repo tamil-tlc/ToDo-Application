@@ -134,13 +134,19 @@ jobs:
           echo "version=$VERSION_NAME" >> $GITHUB_OUTPUT
           echo "build=$VERSION_CODE" >> $GITHUB_OUTPUT
 
+
     - name: Commit and Push Version Bump
-      run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add app/build.gradle.kts
-          git commit -m "Bump version to ${{ steps.bump_version.outputs.version }} (build ${{ steps.bump_version.outputs.build }}) [skip ci]" || echo "No changes to commit"
-          git push
+      env:
+       TOKEN: ${{ secrets.GH_PAT }}
+       run: |
+        git config user.name "github-actions"
+        git config user.email "actions@github.com"
+        git add app/build.gradle*
+        git commit -m "Bump version to ${{ steps.bump_version.outputs.version }} (build ${{ steps.bump_version.outputs.build }}) [skip ci]" || echo "No changes to commit"
+
+         # Use PAT for push
+        git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
+        git push
 
 
     - name: Generate branch-based release notes
