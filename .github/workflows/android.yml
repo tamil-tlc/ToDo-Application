@@ -127,6 +127,7 @@ jobs:
       id: bump_version
       run: |
         VERSION_NAME=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+        VERSION_NAME=${LATEST_TAG#v}  # Remove 'v' prefix if exists
         VERSION_CODE=$((10000 + $(git rev-list --count HEAD)))
     
         sed -i "s/versionCode = .*/versionCode = $VERSION_CODE/" app/build.gradle.kts
