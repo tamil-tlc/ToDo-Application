@@ -106,53 +106,73 @@ jobs:
       name: debug-apk
       path: app/build/outputs/apk/debug/*.apk
 
-      
- version-and-release:
+ release-version:
   needs: build
-  permissions: 
-    contents: write
   runs-on: ubuntu-latest
 
   steps:
-    - name: Checkout the code
-      uses: actions/checkout@v4
+  - name: checkout the code
+    uses: actions/checkout@v4
 
-    - name: Set up Java JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: 17
-        distribution: 'temurin'
-        
-    - name: Bump Version Code and Name
-      id: bump_version
-      run: |
-        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-        VERSION_NAME=${LATEST_TAG#v}
-        VERSION_CODE=$((10000 + $(git rev-list --count HEAD)))
+  - name: set up the java jdk17
+    uses: actions/setup-java@v4
+    with: 
+     java-version: 17
+     distribution: 'temurin'
+     
+  
 
-        sed -i "s/versionCode = .*/versionCode = $VERSION_CODE/" app/build.gradle.kts
-        sed -i "s/versionName = \".*\"/versionName = \"$VERSION_NAME\"/" app/build.gradle.kts
+  - name: Set version from build.gradle.kts
+    id: bump_version
+    run: |
+      gradle_file="app/build.gradle.kts"
+    
+        if [ ! -f "$gradle_file" ]; then
+       echo "Error: $gradle_file not found!"
+       exit 1
+       fi
+    
+      current_version=$(grep -oP 'versionName = "\K[^"]*' "$gradle_file" || echo "1.0.0")
+    
+      echo "Current version: $current_version"
+    
+      IFS='.' read -r major minor patch <<< "$current_version"
+    
+      if [ -z "$patch" ]; then
+      patch=0
+      fi
+    
+      patch=$((patch + 1))
+      new_version="$major.$minor.$patch"
+    
+      echo "Bumping version: $current_version → $new_version"
+    
+      sed -i "s/versionName = \".*\"/versionName = \"$new_version\"/" "$gradle_file"
+    
+      build_number=$(date +%s)
+    
+      sed -i "s/versionCode = .*/versionCode = $build_number/" "$gradle_file"
+    
+      echo "=== Updated build.gradle.kts ==="
+      grep -E "(versionName|versionCode)" "$gradle_file"
+      echo "==============================="
+    
+      echo "version=$new_version" >> $GITHUB_OUTPUT
+      echo "build=$build_number" >> $GITHUB_OUTPUT
 
-        echo "version=$VERSION_NAME" >> $GITHUB_OUTPUT
-        echo "build=$VERSION_CODE" >> $GITHUB_OUTPUT
+  - name: Commit Version Changes
+    run: |
+      git config user.name "github-actions[bot]"
+      git config user.email "github-actions[bot]@users.noreply.github.com"
+      git add app/build.gradle.kts
+      git commit -m " Bump version to ${{ steps.bump_version.outputs.version }} (build ${{ steps.bump_version.outputs.build }}) [skip ci]" || echo "No changes"
+      git push
 
-    - name: Commit and Push Version Bump
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add app/build.gradle.kts
-        git commit -m "Bump version to ${{ steps.bump_version.outputs.version }} (build ${{ steps.bump_version.outputs.build }}) [skip ci]" || exit 0
-        git push
+   
 
-    - name: Create Git Tag
-      run: |
-        VERSION_TAG="v${{ steps.bump_version.outputs.version }}"
-        git tag $VERSION_TAG
-        git push origin $VERSION_TAG
-
-    - name: Generate branch-based release notes
-      id: notes
-      run: |
+  - name: Generate branch-based release notes
+    id: notes
+    run: |
         BRANCH_NAME="${GITHUB_REF##*/}"
         VERSION=${{ steps.bump_version.outputs.version }}
         PROJECT="${{ env.PROJECT_NAME }}"
@@ -169,12 +189,12 @@ jobs:
         echo -e "$NOTES" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
 
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2
-      with:
+  - name: Create GitHub Release
+    uses: softprops/action-gh-release@v2
+    with:
         tag_name: v${{ steps.bump_version.outputs.version }}
         name: Release v${{ steps.bump_version.outputs.version }}
         body: ${{ env.RELEASE_NOTES }}
-      env:
+    env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
