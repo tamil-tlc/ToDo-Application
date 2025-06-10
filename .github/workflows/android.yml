@@ -129,7 +129,6 @@ jobs:
           VERSION_NAME=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
           VERSION_CODE=$((10000 + $(git rev-list --count HEAD)))
 
-          # Assuming versionName and versionCode are in app/build.gradle.kts
           sed -i "s/versionCode .*/versionCode $VERSION_CODE/" app/build.gradle.kts
           sed -i "s/versionName \".*\"/versionName \"$VERSION_NAME\"/" app/build.gradle.kts
 
@@ -145,7 +144,6 @@ jobs:
        git add app/build.gradle*
        git commit -m "Bump version to ${{ steps.bump_version.outputs.version }} (build ${{ steps.bump_version.outputs.build }}) [skip ci]" || echo "No changes to commit"
 
-       # Authenticate using your PAT
        git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
        
        git push origin HEAD:master
