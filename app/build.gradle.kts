@@ -10,7 +10,7 @@ android {
         applicationId = "com.example.todo"
         minSdk = 24
         versionCode = 10001
-        versionName = ""
+        versionName = "0.0.0"
         compileSdk = 35
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
