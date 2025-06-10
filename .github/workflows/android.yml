@@ -106,33 +106,33 @@ jobs:
       name: debug-apk
       path: app/build/outputs/apk/debug/*.apk
 
-
+      
  version-and-release:
-   needs: build
-   permissions: 
+  needs: build
+  permissions: 
     contents: write
-   runs-on: ubuntu-latest
+  runs-on: ubuntu-latest
 
-   steps:
-    - name: checkout the code 
+  steps:
+    - name: Checkout the code
       uses: actions/checkout@v4
 
-    - name: set up java jdk 17
+    - name: Set up Java JDK 17
       uses: actions/setup-java@v4
       with:
-       java-version: 17
-       distribution: 'temurin'
-
+        java-version: 17
+        distribution: 'temurin'
+        
     - name: Bump Version Code and Name
       id: bump_version
       run: |
-        VERSION_NAME=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
-        VERSION_NAME=${LATEST_TAG#v}  # Remove 'v' prefix if exists
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        VERSION_NAME=${LATEST_TAG#v}
         VERSION_CODE=$((10000 + $(git rev-list --count HEAD)))
-    
+
         sed -i "s/versionCode = .*/versionCode = $VERSION_CODE/" app/build.gradle.kts
         sed -i "s/versionName = \".*\"/versionName = \"$VERSION_NAME\"/" app/build.gradle.kts
-    
+
         echo "version=$VERSION_NAME" >> $GITHUB_OUTPUT
         echo "build=$VERSION_CODE" >> $GITHUB_OUTPUT
 
@@ -144,33 +144,37 @@ jobs:
         git commit -m "Bump version to ${{ steps.bump_version.outputs.version }} (build ${{ steps.bump_version.outputs.build }}) [skip ci]" || exit 0
         git push
 
+    - name: Create Git Tag
+      run: |
+        VERSION_TAG="v${{ steps.bump_version.outputs.version }}"
+        git tag $VERSION_TAG
+        git push origin $VERSION_TAG
 
     - name: Generate branch-based release notes
       id: notes
       run: |
-          BRANCH_NAME="${GITHUB_REF##*/}"
-          VERSION=${{ steps.bump_version.outputs.version }}
-          PROJECT="${{ env.PROJECT_NAME }}"
-          if [[ "$BRANCH_NAME" == "dev" ]]; then
-            NOTES="Release for DEV branch\n\nProject: $PROJECT\nVersion: $VERSION\n\nCommits:\n"
-            NOTES+=$(git log --pretty=format:"- %h %s (%an)" -10)
-          elif [[ "$BRANCH_NAME" == "qa" ]]; then
-            NOTES="QA Release\n\nProject: $PROJECT\nVersion: $VERSION"
-          else
-            NOTES="Production release version $VERSION"
-          fi
-          echo "$NOTES"
-          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
-          echo "$NOTES" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV     
-     
- 
+        BRANCH_NAME="${GITHUB_REF##*/}"
+        VERSION=${{ steps.bump_version.outputs.version }}
+        PROJECT="${{ env.PROJECT_NAME }}"
+        if [[ "$BRANCH_NAME" == "dev" ]]; then
+          NOTES="Release for DEV branch\n\nProject: $PROJECT\nVersion: $VERSION\n\nCommits:\n"
+          NOTES+=$(git log --pretty=format:"- %h %s (%an)" -10)
+        elif [[ "$BRANCH_NAME" == "qa" ]]; then
+          NOTES="QA Release\n\nProject: $PROJECT\nVersion: $VERSION"
+        else
+          NOTES="Production release version $VERSION"
+        fi
+
+        echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+        echo -e "$NOTES" >> $GITHUB_ENV
+        echo "EOF" >> $GITHUB_ENV
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-          tag_name: ${{ steps.bump_version.outputs.version }}
-          name: Release ${{ steps.bump_version.outputs.version }}
-          body: RELEASE_NOTES.md
+        tag_name: v${{ steps.bump_version.outputs.version }}
+        name: Release v${{ steps.bump_version.outputs.version }}
+        body: ${{ env.RELEASE_NOTES }}
       env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
