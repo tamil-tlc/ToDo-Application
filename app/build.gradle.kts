@@ -9,7 +9,7 @@ android {
     defaultConfig {
         applicationId = "com.example.todo"
         minSdk = 24
-        versionCode = 10001
+        versionCode 10001
         versionName = "1.0.0"
         compileSdk = 35
 
