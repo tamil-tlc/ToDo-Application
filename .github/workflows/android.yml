@@ -126,27 +126,22 @@ jobs:
     - name: Bump Version Code and Name
       id: bump_version
       run: |
-          VERSION_NAME=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
-          VERSION_CODE=$((10000 + $(git rev-list --count HEAD)))
-
-          sed -i "s/versionCode .*/versionCode $VERSION_CODE/" app/build.gradle.kts
-          sed -i "s/versionName \".*\"/versionName \"$VERSION_NAME\"/" app/build.gradle.kts
-
-          echo "version=$VERSION_NAME" >> $GITHUB_OUTPUT
-          echo "build=$VERSION_CODE" >> $GITHUB_OUTPUT
+        VERSION_NAME=$(git describe --tags --abbrev=0 2>/dev/null || echo "0.0.0")
+        VERSION_CODE=$((10000 + $(git rev-list --count HEAD)))
+    
+        sed -i "s/versionCode = .*/versionCode = $VERSION_CODE/" app/build.gradle.kts
+        sed -i "s/versionName = \".*\"/versionName = \"$VERSION_NAME\"/" app/build.gradle.kts
+    
+        echo "version=$VERSION_NAME" >> $GITHUB_OUTPUT
+        echo "build=$VERSION_CODE" >> $GITHUB_OUTPUT
 
     - name: Commit and Push Version Bump
-      env:
-       TOKEN: ${{ secrets.GH_PAT }}
       run: |
-       git config user.name "github-actions"
-       git config user.email "actions@github.com"
-       git add app/build.gradle*
-       git commit -m "Bump version to ${{ steps.bump_version.outputs.version }} (build ${{ steps.bump_version.outputs.build }}) [skip ci]" || echo "No changes to commit"
-
-       git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
-       
-       git push origin HEAD:master
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add app/build.gradle.kts
+        git commit -m "Bump version to ${{ steps.bump_version.outputs.version }} (build ${{ steps.bump_version.outputs.build }}) [skip ci]" || exit 0
+        git push
 
 
     - name: Generate branch-based release notes
@@ -174,7 +169,7 @@ jobs:
       with:
           tag_name: ${{ steps.bump_version.outputs.version }}
           name: Release ${{ steps.bump_version.outputs.version }}
-          body: ${{ steps.release_notes.outputs.body }}
+          body: RELEASE_NOTES.md
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
