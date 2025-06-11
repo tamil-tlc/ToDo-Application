@@ -9,8 +9,8 @@ android {
     defaultConfig {
         applicationId = "com.example.todo"
         minSdk = 24
-        versionCode = 1749617966
-        versionName = "0.0.2"
+        versionCode = 1749657686
+        versionName = "0.0.3"
         compileSdk = 35
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
