@@ -128,45 +128,20 @@ jobs:
     id: bump_version
     run: |
       gradle_file="app/build.gradle.kts"
-    
-        if [ ! -f "$gradle_file" ]; then
-       echo "Error: $gradle_file not found!"
-       exit 1
-       fi
-    
       current_version=$(grep -oP 'versionName = "\K[^"]*' "$gradle_file" || echo "1.0.0")
-    
-      echo "Current version: $current_version"
-    
       IFS='.' read -r major minor patch <<< "$current_version"
-    
-      if [ -z "$patch" ]; then
-      patch=0
-      fi
-    
       patch=$((patch + 1))
       new_version="$major.$minor.$patch"
-    
+  
       echo "Bumping version: $current_version → $new_version"
     
       sed -i "s/versionName = \".*\"/versionName = \"$new_version\"/" "$gradle_file"
-    
       build_number=$(date +%s)
-    
       sed -i "s/versionCode = .*/versionCode = $build_number/" "$gradle_file"
-    
-      echo "=== Updated build.gradle.kts ==="
-      grep -E "(versionName|versionCode)" "$gradle_file"
-      echo "==============================="
-    
+   
       echo "version=$new_version" >> $GITHUB_OUTPUT
       echo "build=$build_number" >> $GITHUB_OUTPUT
-
-  - name: Configure Git
-    run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/tamil-tlc/ToDo-Application.git
+      
 
   - name: Commit Version Changes
     run: |
@@ -196,6 +171,10 @@ jobs:
         echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
         echo -e "$NOTES" >> $GITHUB_ENV
         echo "EOF" >> $GITHUB_ENV
+
+  - name: Write release notes to RELEASE_NOTES.md
+    run: |
+        echo -e "${{ env.RELEASE_NOTES }}" > RELEASE_NOTES.md
 
   - name: Create GitHub Release
     uses: softprops/action-gh-release@v2
