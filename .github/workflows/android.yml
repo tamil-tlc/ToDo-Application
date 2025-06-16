@@ -20,13 +20,7 @@ jobs:
      with:
       java-version: '17'
       distribution: 'temurin'
-
-   - name: stored with cache
-     uses: actions/cache@v4
-     with:
-      path: |
-          ~/.gradlew/caches
-      key: ${{runner.os}}-gradle-${{ hashfiles ('**/*gradle*')}}
+      cache: gradle
 
    - name: gradle excute permission
      run: chmod +x gradlew
@@ -54,12 +48,8 @@ jobs:
      with:
       java-version: '17'
       distribution: 'temurin'
-
-   - name: stored with cache
-     uses: actions/cache@v4
-     with:
-      path: ~/.gradlew/caches
-      key: ${{runner.os}}-gradle-${{ hashfiles ('**/*gradle*') }}
+      cache: gradle
+   
 
    - name: grant execute permission 
      run: chmod +x gradlew
@@ -72,7 +62,6 @@ jobs:
      with:
       name: test result
       path: app/build/reports/tests
-
 
  build:
   needs: [lint, unit-test]
@@ -87,13 +76,8 @@ jobs:
      with:
       java-version: '17'
       distribution: 'temurin'
-
-   - name: cache for storage
-     uses: actions/cache@v4
-     with:
-      path: ~/.gradlew/caches
-      key: ${{runner.os}}-gradle-${{ hashfiles ('**/*gradlew*') }} 
-
+      cache: gradle
+   
    - name: grant execute permission for gradlew
      run: chmod +x gradlew
 
@@ -121,7 +105,7 @@ jobs:
     with: 
      java-version: 17
      distribution: 'temurin'
-     
+     cache: gradle
   
 
   - name: Set version from build.gradle.kts
